@@ -1,0 +1,1 @@
+ALTER TYPE "InventoryCategory" ADD VALUE IF NOT EXISTS 'PART';

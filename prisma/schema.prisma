@@ -1,0 +1,1336 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  OWNER
+  MANAGER
+  PRODUCTION
+  WAREHOUSE
+  FINANCE
+  SUPPORT
+}
+
+enum TenantUserStatus {
+  ACTIVE
+  INVITED
+  DISABLED
+}
+
+enum PlatformAdminRole {
+  SUPER_ADMIN
+  ADMIN
+}
+
+enum PlatformAdminStatus {
+  ACTIVE
+  DISABLED
+}
+
+enum ChannelType {
+  PINDUODUO
+  TAOBAO
+  DOUYIN
+  SHOPIFY
+  ETSY
+  EBAY
+  OFFLINE
+  WECHAT
+  MANUAL
+}
+
+enum MaterialType {
+  PLA
+  PETG
+  ABS
+  TPU
+  OTHER
+}
+
+enum PrinterStatus {
+  IDLE
+  PRINTING
+  MAINTENANCE
+  DISABLED
+}
+
+enum PurchaseStatus {
+  DRAFT
+  RECEIVED
+  CANCELLED
+}
+
+enum InventoryCategory {
+  MATERIAL
+  PACKAGING
+  PRODUCT
+  PART
+}
+
+enum InventoryTransactionType {
+  PURCHASE_IN
+  PRODUCTION_CONSUME
+  PRODUCTION_IN
+  SALES_OUT
+  AFTERSALE_RESEND_OUT
+  RETURN_IN
+  STOCK_GAIN
+  STOCK_LOSS
+  SCRAP
+  MANUAL_ADJUST
+}
+
+enum StockAlertType {
+  MATERIAL_LOW
+  PACKAGING_LOW
+  PRODUCT_LOW
+  OVERSTOCK
+  PRODUCTION_OVERDUE
+  SHIPPING_OVERDUE
+}
+
+enum BatchStatus {
+  NORMAL
+  DEPLETED
+  SCRAPPED
+}
+
+enum ProductionStatus {
+  PENDING
+  PRINTING
+  QC_PENDING
+  STOCKED
+  SHIPPING_PENDING
+  FAILED
+  REWORK
+  SCRAPPED
+}
+
+enum OrderStatus {
+  PENDING_PAYMENT
+  PAID
+  PRODUCTION_PENDING
+  SHIPPING_PENDING
+  SHIPPED
+  COMPLETED
+  REFUNDED
+  CANCELLED
+  AFTERSALE
+}
+
+enum ShipmentStatus {
+  PENDING
+  SHIPPED
+  RETURNED
+}
+
+enum AfterSaleType {
+  REFUND_ONLY
+  RETURN_REFUND
+  RESEND_PRODUCT
+  RESEND_PART
+  WRONG_ITEM
+  MISSING_ITEM
+  DAMAGED
+  QUALITY_ISSUE
+  REJECTED
+  PLATFORM_PENALTY
+  COMPENSATION
+  COUPON
+}
+
+model Tenant {
+  id             String          @id @default(cuid())
+  name           String
+  slug           String          @unique
+  contactName    String?
+  contactPhone   String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  deletedAt      DateTime?
+  users          TenantUser[]
+  shops          Shop[]
+  products       Product[]
+  backgroundJobs BackgroundJob[]
+  productSkus    ProductSku[]
+  suppliers      Supplier[]
+  materials      Material[]
+  packagingItems PackagingItem[]
+  printers       Printer[]
+  accessGrants   TenantAccessGrant[]
+  platformAuditLogs PlatformAuditLog[]
+}
+
+model User {
+  id           String       @id @default(cuid())
+  email        String       @unique
+  name         String
+  passwordHash String
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  deletedAt    DateTime?
+  tenants      TenantUser[]
+}
+
+model TenantUser {
+  id        String           @id @default(cuid())
+  tenantId  String
+  userId    String
+  role      UserRole         @default(OWNER)
+  status    TenantUserStatus @default(ACTIVE)
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+  tenant    Tenant           @relation(fields: [tenantId], references: [id])
+  user      User             @relation(fields: [userId], references: [id])
+
+  @@unique([tenantId, userId])
+  @@index([tenantId, role])
+}
+
+model PlatformAdmin {
+  id               String              @id @default(cuid())
+  email            String              @unique
+  name             String
+  passwordHash     String
+  role             PlatformAdminRole
+  status           PlatformAdminStatus @default(ACTIVE)
+  createdByAdminId String?
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+  lastLoginAt      DateTime?
+  createdByAdmin   PlatformAdmin?      @relation("PlatformAdminCreator", fields: [createdByAdminId], references: [id], onDelete: SetNull)
+  createdAdmins    PlatformAdmin[]     @relation("PlatformAdminCreator")
+  sessions         PlatformAdminSession[]
+  accessGrants     TenantAccessGrant[]
+  auditLogs        PlatformAuditLog[]
+
+  @@index([status, role])
+  @@index([createdByAdminId])
+}
+
+model PlatformAdminSession {
+  id              String        @id @default(cuid())
+  platformAdminId String
+  tokenHash       String        @unique
+  ipAddress       String?
+  userAgent       String?
+  expiresAt       DateTime
+  revokedAt       DateTime?
+  createdAt       DateTime      @default(now())
+  platformAdmin   PlatformAdmin @relation(fields: [platformAdminId], references: [id], onDelete: Cascade)
+
+  @@index([platformAdminId, expiresAt])
+  @@index([expiresAt])
+}
+
+model TenantAccessGrant {
+  id              String             @id @default(cuid())
+  platformAdminId String
+  tenantId        String
+  reason          String
+  ipAddress       String?
+  expiresAt       DateTime
+  revokedAt       DateTime?
+  createdAt       DateTime           @default(now())
+  platformAdmin   PlatformAdmin      @relation(fields: [platformAdminId], references: [id], onDelete: Restrict)
+  tenant          Tenant             @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  auditLogs       PlatformAuditLog[]
+
+  @@index([platformAdminId, expiresAt])
+  @@index([tenantId, expiresAt])
+}
+
+model PlatformAuditLog {
+  id              String             @id @default(cuid())
+  platformAdminId String
+  tenantId        String?
+  accessGrantId   String?
+  action          String
+  requestMethod   String?
+  requestPath     String?
+  entityType      String?
+  entityId        String?
+  metadata        Json?
+  ipAddress       String?
+  createdAt       DateTime           @default(now())
+  platformAdmin   PlatformAdmin      @relation(fields: [platformAdminId], references: [id], onDelete: Restrict)
+  tenant          Tenant?            @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  accessGrant     TenantAccessGrant? @relation(fields: [accessGrantId], references: [id], onDelete: Restrict)
+
+  @@index([platformAdminId, createdAt])
+  @@index([tenantId, createdAt])
+  @@index([accessGrantId])
+  @@index([entityType, entityId])
+}
+
+model Role {
+  id          String   @id @default(cuid())
+  tenantId    String?
+  code        String
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([tenantId, code])
+}
+
+model Permission {
+  id          String   @id @default(cuid())
+  code        String   @unique
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+}
+
+model RolePermission {
+  id           String @id @default(cuid())
+  roleId       String
+  permissionId String
+
+  @@unique([roleId, permissionId])
+}
+
+model Subscription {
+  id        String    @id @default(cuid())
+  tenantId  String
+  plan      String
+  status    String
+  startsAt  DateTime  @default(now())
+  endsAt    DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([tenantId])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  tenantId   String?
+  userId     String?
+  action     String
+  entityType String
+  entityId   String?
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  @@index([tenantId, createdAt])
+  @@index([entityType, entityId])
+}
+
+model SalesChannel {
+  id        String      @id @default(cuid())
+  tenantId  String
+  name      String
+  type      ChannelType
+  isActive  Boolean     @default(true)
+  createdBy String?
+  updatedBy String?
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  deletedAt DateTime?
+  shops     Shop[]
+
+  @@index([tenantId])
+}
+
+model Shop {
+  id             String        @id @default(cuid())
+  tenantId       String
+  salesChannelId String?
+  name           String
+  contactName    String?
+  remark         String?
+  isActive       Boolean       @default(true)
+  createdBy      String?
+  updatedBy      String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  deletedAt      DateTime?
+  tenant         Tenant        @relation(fields: [tenantId], references: [id])
+  salesChannel   SalesChannel? @relation(fields: [salesChannelId], references: [id])
+  orders         SalesOrder[]
+
+  @@index([tenantId])
+}
+
+model Supplier {
+  id        String    @id @default(cuid())
+  tenantId  String
+  name      String
+  contact   String?
+  phone     String?
+  remark    String?
+  isActive  Boolean   @default(true)
+  createdBy String?
+  updatedBy String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+  tenant    Tenant    @relation(fields: [tenantId], references: [id])
+
+  @@index([tenantId])
+}
+
+model Product {
+  id               String                   @id @default(cuid())
+  tenantId         String
+  name             String
+  category         String?
+  description      String?
+  isActive         Boolean                  @default(true)
+  createdBy        String?
+  updatedBy        String?
+  createdAt        DateTime                 @default(now())
+  updatedAt        DateTime                 @updatedAt
+  deletedAt        DateTime?
+  tenant           Tenant                   @relation(fields: [tenantId], references: [id])
+  skus             ProductSku[]
+  titleVersions    ProductTitleVersion[]
+  contentAssets    ProductContentAsset[]
+  detailVersions   ProductDetailVersion[]
+  aiJobs           ProductAiGenerationJob[]
+  models           ProductModel[]
+  competitors      ProductCompetitor[]
+  competitorAlerts CompetitorAlert[]
+
+  @@index([tenantId])
+}
+
+model ProductModel {
+  id            String   @id @default(cuid())
+  tenantId      String
+  productId     String
+  skuId         String?
+  name          String
+  fileUrl       String
+  fileType      String
+  version       Int      @default(1)
+  isCurrent     Boolean  @default(false)
+  status        String   @default("ACTIVE")
+  printSettings Json?
+  remark        String?
+  createdBy     String?
+  updatedBy     String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  product       Product  @relation(fields: [productId], references: [id])
+
+  @@index([tenantId, productId])
+  @@index([tenantId, skuId])
+}
+
+model ProductTitleVersion {
+  id           String   @id @default(cuid())
+  tenantId     String
+  productId    String
+  skuId        String?
+  version      Int      @default(1)
+  platform     String
+  title        String
+  keywords     String?
+  score        Decimal  @default(0) @db.Decimal(5, 2)
+  riskNotes    String?
+  reviewStatus String   @default("PENDING_REVIEW")
+  isCurrent    Boolean  @default(false)
+  remark       String?
+  createdBy    String?
+  createdAt    DateTime @default(now())
+  product      Product  @relation(fields: [productId], references: [id])
+
+  @@index([tenantId, productId])
+}
+
+model ProductContentAsset {
+  id              String   @id @default(cuid())
+  tenantId        String
+  productId       String
+  skuId           String?
+  assetType       String
+  platform        String?
+  purpose         String?
+  sourceUrl       String?
+  generatedPrompt String?
+  resultUrl       String?
+  planText        String?
+  reviewStatus    String   @default("DRAFT")
+  usageStatus     String   @default("BACKUP")
+  createdBy       String?
+  createdAt       DateTime @default(now())
+  product         Product  @relation(fields: [productId], references: [id])
+
+  @@index([tenantId, productId])
+}
+
+model ProductDetailVersion {
+  id            String   @id @default(cuid())
+  tenantId      String
+  productId     String
+  skuId         String?
+  version       Int      @default(1)
+  platform      String
+  modules       Json
+  aiContent     String?
+  editedContent String?
+  reviewStatus  String   @default("DRAFT")
+  isCurrent     Boolean  @default(false)
+  createdBy     String?
+  createdAt     DateTime @default(now())
+  product       Product  @relation(fields: [productId], references: [id])
+
+  @@index([tenantId, productId])
+}
+
+model ProductAiGenerationJob {
+  id        String   @id @default(cuid())
+  tenantId  String
+  productId String
+  skuId     String?
+  jobType   String
+  platform  String?
+  input     Json
+  prompt    String?
+  result    Json?
+  model     String   @default("RULE_ASSISTED_V1")
+  status    String   @default("COMPLETED")
+  createdBy String?
+  createdAt DateTime @default(now())
+  product   Product  @relation(fields: [productId], references: [id])
+
+  @@index([tenantId, productId])
+}
+
+model BackgroundJob {
+  id          String    @id @default(cuid())
+  tenantId    String
+  type        String
+  status      String    @default("PENDING")
+  priority    Int       @default(0)
+  payload     Json
+  result      Json?
+  error       String?
+  attempts    Int       @default(0)
+  maxAttempts Int       @default(3)
+  availableAt DateTime  @default(now())
+  lockedAt    DateTime?
+  lockedBy    String?
+  startedAt   DateTime?
+  finishedAt  DateTime?
+  createdBy   String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  tenant      Tenant    @relation(fields: [tenantId], references: [id])
+
+  @@index([tenantId, status, availableAt])
+  @@index([status, priority, availableAt])
+}
+
+model ProductCompetitor {
+  id                  String               @id @default(cuid())
+  tenantId            String
+  productId           String
+  platform            String
+  competitorUrl       String
+  competitorProductId String?
+  title               String?
+  mainImageUrl        String?
+  shopName            String?
+  currentPrice        Decimal              @default(0) @db.Decimal(12, 2)
+  originalPrice       Decimal              @default(0) @db.Decimal(12, 2)
+  salesDisplayValue   String?
+  salesEstimate       Decimal?             @db.Decimal(14, 3)
+  salesActual         Decimal?             @db.Decimal(14, 3)
+  reviewCount         Int                  @default(0)
+  rating              Decimal?             @db.Decimal(4, 2)
+  activityInfo        String?
+  specification       String?
+  dataSource          String               @default("MANUAL")
+  rawData             Json?
+  isPrimary           Boolean              @default(false)
+  status              String               @default("ACTIVE")
+  createdBy           String?
+  updatedBy           String?
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  product             Product              @relation(fields: [productId], references: [id])
+  snapshots           CompetitorSnapshot[]
+  alerts              CompetitorAlert[]
+
+  @@unique([tenantId, productId, competitorUrl])
+  @@index([tenantId, productId, status])
+}
+
+model CompetitorSnapshot {
+  id                String            @id @default(cuid())
+  tenantId          String
+  competitorId      String
+  price             Decimal           @default(0) @db.Decimal(12, 2)
+  originalPrice     Decimal           @default(0) @db.Decimal(12, 2)
+  salesDisplayValue String?
+  salesEstimate     Decimal?          @db.Decimal(14, 3)
+  salesActual       Decimal?          @db.Decimal(14, 3)
+  reviewCount       Int               @default(0)
+  activityInfo      String?
+  title             String?
+  mainImageUrl      String?
+  dataSource        String
+  rawData           Json?
+  collectedAt       DateTime          @default(now())
+  competitor        ProductCompetitor @relation(fields: [competitorId], references: [id])
+
+  @@index([tenantId, competitorId, collectedAt])
+}
+
+model CompetitorAlert {
+  id            String            @id @default(cuid())
+  tenantId      String
+  productId     String
+  competitorId  String
+  alertType     String
+  severity      String            @default("INFO")
+  title         String
+  description   String
+  previousValue String?
+  currentValue  String?
+  status        String            @default("UNREAD")
+  createdAt     DateTime          @default(now())
+  readAt        DateTime?
+  product       Product           @relation(fields: [productId], references: [id])
+  competitor    ProductCompetitor @relation(fields: [competitorId], references: [id])
+
+  @@index([tenantId, status, createdAt])
+  @@index([tenantId, productId, createdAt])
+}
+
+model ProductOpportunity {
+  id                   String   @id @default(cuid())
+  tenantId             String
+  keyword              String
+  platform             String
+  productUrl           String?
+  title                String
+  mainImageUrl         String?
+  price                Decimal  @default(0) @db.Decimal(12, 2)
+  salesDisplayValue    String?
+  salesEstimate        Decimal? @db.Decimal(14, 3)
+  salesActual          Decimal? @db.Decimal(14, 3)
+  reviewCount          Int      @default(0)
+  category             String?
+  shopName             String?
+  competitorCount      Int      @default(0)
+  estimatedCost        Decimal  @default(0) @db.Decimal(12, 2)
+  estimatedMargin      Decimal  @default(0) @db.Decimal(8, 4)
+  demandScore          Decimal  @default(0) @db.Decimal(5, 2)
+  competitionScore     Decimal  @default(0) @db.Decimal(5, 2)
+  printDifficultyScore Decimal  @default(0) @db.Decimal(5, 2)
+  afterSaleRiskScore   Decimal  @default(0) @db.Decimal(5, 2)
+  opportunityScore     Decimal  @default(0) @db.Decimal(5, 2)
+  aiRecommendation     String?
+  dataSource           String   @default("MANUAL")
+  rawData              Json?
+  status               String   @default("PENDING")
+  convertedProductId   String?
+  createdBy            String?
+  updatedBy            String?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  @@index([tenantId, status])
+}
+
+model ProductSku {
+  id             String                @id @default(cuid())
+  tenantId       String
+  productId      String
+  skuCode        String
+  name           String
+  color          String?
+  size           String?
+  material       String?
+  salePrice      Decimal               @db.Decimal(12, 2)
+  status         String                @default("ACTIVE")
+  warningStock   Decimal               @default(0) @db.Decimal(14, 3)
+  remark         String?
+  createdBy      String?
+  updatedBy      String?
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+  deletedAt      DateTime?
+  tenant         Tenant                @relation(fields: [tenantId], references: [id])
+  product        Product               @relation(fields: [productId], references: [id])
+  bom            ProductBom?
+  orderItems     SalesOrderItem[]
+  productionRows ProductionOrderItem[]
+
+  @@unique([tenantId, skuCode])
+  @@index([tenantId])
+}
+
+model Material {
+  id                String          @id @default(cuid())
+  tenantId          String
+  defaultSupplierId String?
+  name              String
+  type              MaterialType
+  color             String?
+  brand             String?
+  unit              String          @default("g")
+  warningStock      Decimal         @default(0) @db.Decimal(14, 3)
+  remark            String?
+  createdBy         String?
+  updatedBy         String?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  deletedAt         DateTime?
+  tenant            Tenant          @relation(fields: [tenantId], references: [id])
+  batches           MaterialBatch[]
+  boms              ProductBom[]
+
+  @@index([tenantId])
+}
+
+model PackagingItem {
+  id           String    @id @default(cuid())
+  tenantId     String
+  name         String
+  spec         String?
+  unit         String
+  unitPrice    Decimal   @default(0) @db.Decimal(12, 4)
+  quantity     Decimal   @default(0) @db.Decimal(14, 3)
+  warningStock Decimal   @default(0) @db.Decimal(14, 3)
+  remark       String?
+  createdBy    String?
+  updatedBy    String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime?
+  tenant       Tenant    @relation(fields: [tenantId], references: [id])
+
+  @@index([tenantId])
+}
+
+model Printer {
+  id                       String                     @id @default(cuid())
+  tenantId                 String
+  code                     String
+  name                     String
+  model                    String?
+  purchasePrice            Decimal                    @default(0) @db.Decimal(12, 2)
+  purchaseDate             DateTime?
+  availableHours           Decimal                    @default(0) @db.Decimal(12, 2)
+  depreciationPerHour      Decimal                    @default(0) @db.Decimal(12, 4)
+  maintenanceIntervalDays  Int                        @default(90)
+  maintenanceIntervalHours Decimal                    @default(500) @db.Decimal(12, 2)
+  lastMaintenanceAt        DateTime?
+  nextMaintenanceAt        DateTime?
+  lastMaintenanceHours     Decimal                    @default(0) @db.Decimal(12, 2)
+  status                   PrinterStatus              @default(IDLE)
+  remark                   String?
+  createdBy                String?
+  updatedBy                String?
+  createdAt                DateTime                   @default(now())
+  updatedAt                DateTime                   @updatedAt
+  deletedAt                DateTime?
+  tenant                   Tenant                     @relation(fields: [tenantId], references: [id])
+  productionOrders         ProductionOrder[]
+  maintenanceRecords       PrinterMaintenanceRecord[]
+  partTransactions         PrinterPartTransaction[]
+
+  @@unique([tenantId, code])
+  @@index([tenantId])
+}
+
+model PrinterMaintenanceRecord {
+  id                    String                   @id @default(cuid())
+  tenantId              String
+  printerId             String
+  maintenanceType       String
+  performedAt           DateTime                 @default(now())
+  runtimeHoursAtService Decimal                  @default(0) @db.Decimal(12, 2)
+  cost                  Decimal                  @default(0) @db.Decimal(12, 2)
+  operatorName          String?
+  details               String?
+  createdBy             String?
+  createdAt             DateTime                 @default(now())
+  printer               Printer                  @relation(fields: [printerId], references: [id])
+  partTransactions      PrinterPartTransaction[]
+
+  @@index([tenantId, performedAt])
+  @@index([tenantId, printerId])
+}
+
+model PrinterPart {
+  id              String                   @id @default(cuid())
+  tenantId        String
+  code            String
+  name            String
+  compatibleModel String?
+  unit            String                   @default("个")
+  quantity        Decimal                  @default(0) @db.Decimal(14, 3)
+  warningStock    Decimal                  @default(0) @db.Decimal(14, 3)
+  unitCost        Decimal                  @default(0) @db.Decimal(12, 4)
+  supplierId      String?
+  remark          String?
+  createdBy       String?
+  updatedBy       String?
+  createdAt       DateTime                 @default(now())
+  updatedAt       DateTime                 @updatedAt
+  deletedAt       DateTime?
+  transactions    PrinterPartTransaction[]
+
+  @@unique([tenantId, code])
+  @@index([tenantId])
+}
+
+model PrinterPartTransaction {
+  id                  String                    @id @default(cuid())
+  tenantId            String
+  partId              String
+  printerId           String?
+  maintenanceRecordId String?
+  type                String
+  quantity            Decimal                   @db.Decimal(14, 3)
+  unitCost            Decimal                   @default(0) @db.Decimal(12, 4)
+  totalCost           Decimal                   @default(0) @db.Decimal(12, 2)
+  occurredAt          DateTime                  @default(now())
+  remark              String?
+  createdBy           String?
+  createdAt           DateTime                  @default(now())
+  part                PrinterPart               @relation(fields: [partId], references: [id])
+  printer             Printer?                  @relation(fields: [printerId], references: [id])
+  maintenanceRecord   PrinterMaintenanceRecord? @relation(fields: [maintenanceRecordId], references: [id])
+
+  @@index([tenantId, occurredAt])
+  @@index([tenantId, partId])
+  @@index([tenantId, printerId])
+}
+
+model ToolAsset {
+  id                  String    @id @default(cuid())
+  tenantId            String
+  code                String
+  name                String
+  category            String
+  quantity            Decimal   @default(1) @db.Decimal(14, 3)
+  purchaseAmount      Decimal   @default(0) @db.Decimal(12, 2)
+  purchaseDate        DateTime
+  usefulLifeMonths    Int       @default(36)
+  monthlyDepreciation Decimal   @default(0) @db.Decimal(12, 2)
+  assignedPrinterId   String?
+  status              String    @default("ACTIVE")
+  remark              String?
+  createdBy           String?
+  updatedBy           String?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  deletedAt           DateTime?
+
+  @@unique([tenantId, code])
+  @@index([tenantId, status])
+}
+
+model PurchaseOrder {
+  id             String              @id @default(cuid())
+  tenantId       String
+  supplierId     String?
+  orderNo        String
+  status         PurchaseStatus      @default(DRAFT)
+  purchaseDate   DateTime            @default(now())
+  purchaseAmount Decimal             @default(0) @db.Decimal(12, 2)
+  shippingFee    Decimal             @default(0) @db.Decimal(12, 2)
+  taxFee         Decimal             @default(0) @db.Decimal(12, 2)
+  discountAmount Decimal             @default(0) @db.Decimal(12, 2)
+  totalCost      Decimal             @default(0) @db.Decimal(12, 2)
+  remark         String?
+  createdBy      String?
+  updatedBy      String?
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+  deletedAt      DateTime?
+  items          PurchaseOrderItem[]
+
+  @@unique([tenantId, orderNo])
+  @@index([tenantId])
+}
+
+model PurchaseOrderItem {
+  id              String            @id @default(cuid())
+  tenantId        String
+  purchaseOrderId String
+  category        InventoryCategory
+  materialId      String?
+  packagingItemId String?
+  quantity        Decimal           @db.Decimal(14, 3)
+  amount          Decimal           @db.Decimal(12, 2)
+  unitCost        Decimal           @default(0) @db.Decimal(12, 4)
+  createdAt       DateTime          @default(now())
+  purchaseOrder   PurchaseOrder     @relation(fields: [purchaseOrderId], references: [id])
+
+  @@index([tenantId])
+}
+
+model MaterialBatch {
+  id             String      @id @default(cuid())
+  tenantId       String
+  materialId     String
+  supplierId     String?
+  batchNo        String
+  purchasedAt    DateTime    @default(now())
+  purchaseGrams  Decimal     @db.Decimal(14, 3)
+  purchaseAmount Decimal     @db.Decimal(12, 2)
+  shippingFee    Decimal     @default(0) @db.Decimal(12, 2)
+  taxFee         Decimal     @default(0) @db.Decimal(12, 2)
+  discountAmount Decimal     @default(0) @db.Decimal(12, 2)
+  totalCost      Decimal     @db.Decimal(12, 2)
+  costPerGram    Decimal     @db.Decimal(12, 6)
+  remainingGrams Decimal     @db.Decimal(14, 3)
+  status         BatchStatus @default(NORMAL)
+  createdBy      String?
+  updatedBy      String?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  deletedAt      DateTime?
+  material       Material    @relation(fields: [materialId], references: [id])
+
+  @@unique([tenantId, batchNo])
+  @@index([tenantId, materialId])
+}
+
+model InventoryItem {
+  id             String            @id @default(cuid())
+  tenantId       String
+  category       InventoryCategory
+  refId          String
+  name           String
+  quantity       Decimal           @default(0) @db.Decimal(14, 3)
+  lockedQuantity Decimal           @default(0) @db.Decimal(14, 3)
+  warningStock   Decimal           @default(0) @db.Decimal(14, 3)
+  unitCost       Decimal           @default(0) @db.Decimal(12, 4)
+  createdBy      String?
+  updatedBy      String?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  deletedAt      DateTime?
+
+  @@unique([tenantId, category, refId])
+  @@index([tenantId])
+}
+
+model InventoryTransaction {
+  id         String                   @id @default(cuid())
+  tenantId   String
+  itemId     String?
+  category   InventoryCategory
+  refId      String
+  type       InventoryTransactionType
+  quantity   Decimal                  @db.Decimal(14, 3)
+  unitCost   Decimal                  @default(0) @db.Decimal(12, 4)
+  totalCost  Decimal                  @default(0) @db.Decimal(12, 2)
+  sourceType String?
+  sourceId   String?
+  remark     String?
+  createdBy  String?
+  createdAt  DateTime                 @default(now())
+
+  @@index([tenantId, createdAt])
+  @@index([sourceType, sourceId])
+}
+
+model StockAlertRule {
+  id        String         @id @default(cuid())
+  tenantId  String
+  type      StockAlertType
+  refId     String
+  threshold Decimal        @db.Decimal(14, 3)
+  isActive  Boolean        @default(true)
+  createdBy String?
+  updatedBy String?
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+  deletedAt DateTime?
+
+  @@index([tenantId, type])
+}
+
+model ProductBom {
+  id                   String           @id @default(cuid())
+  tenantId             String
+  skuId                String           @unique
+  defaultMaterialId    String?
+  theoreticalGrams     Decimal          @default(0) @db.Decimal(14, 3)
+  wasteGrams           Decimal          @default(0) @db.Decimal(14, 3)
+  estimatedPrintHours  Decimal          @default(0) @db.Decimal(10, 2)
+  laborMinutes         Decimal          @default(0) @db.Decimal(10, 2)
+  laborCostPerMinute   Decimal          @default(0) @db.Decimal(10, 4)
+  electricityCost      Decimal          @default(0) @db.Decimal(12, 2)
+  estimatedProductCost Decimal          @default(0) @db.Decimal(12, 2)
+  remark               String?
+  createdBy            String?
+  updatedBy            String?
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+  deletedAt            DateTime?
+  sku                  ProductSku       @relation(fields: [skuId], references: [id])
+  defaultMaterial      Material?        @relation(fields: [defaultMaterialId], references: [id])
+  items                ProductBomItem[]
+
+  @@index([tenantId])
+}
+
+model ProductBomItem {
+  id        String            @id @default(cuid())
+  tenantId  String
+  bomId     String
+  category  InventoryCategory
+  refId     String
+  quantity  Decimal           @db.Decimal(14, 3)
+  unitCost  Decimal           @default(0) @db.Decimal(12, 4)
+  totalCost Decimal           @default(0) @db.Decimal(12, 2)
+  bom       ProductBom        @relation(fields: [bomId], references: [id])
+
+  @@index([tenantId, bomId])
+}
+
+model ProductionOrder {
+  id                  String                @id @default(cuid())
+  tenantId            String
+  orderNo             String
+  salesOrderId        String?
+  skuId               String?
+  printerId           String?
+  plannedQuantity     Int
+  completedQuantity   Int                   @default(0)
+  failedQuantity      Int                   @default(0)
+  status              ProductionStatus      @default(PENDING)
+  assigneeName        String?
+  startedAt           DateTime?
+  endedAt             DateTime?
+  actualMaterialGrams Decimal               @default(0) @db.Decimal(14, 3)
+  actualPrintHours    Decimal               @default(0) @db.Decimal(10, 2)
+  actualCost          Decimal               @default(0) @db.Decimal(12, 2)
+  failureReason       String?
+  remark              String?
+  createdBy           String?
+  updatedBy           String?
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+  deletedAt           DateTime?
+  printer             Printer?              @relation(fields: [printerId], references: [id])
+  items               ProductionOrderItem[]
+  failures            PrintFailure[]
+
+  @@unique([tenantId, orderNo])
+  @@index([tenantId, status])
+}
+
+model ProductionOrderItem {
+  id                String          @id @default(cuid())
+  tenantId          String
+  productionOrderId String
+  skuId             String
+  plannedQuantity   Int
+  completedQuantity Int             @default(0)
+  failedQuantity    Int             @default(0)
+  productionOrder   ProductionOrder @relation(fields: [productionOrderId], references: [id])
+  sku               ProductSku      @relation(fields: [skuId], references: [id])
+
+  @@index([tenantId])
+}
+
+model PrintFailure {
+  id                String          @id @default(cuid())
+  tenantId          String
+  productionOrderId String
+  reason            String
+  quantity          Int             @default(1)
+  materialLossGrams Decimal         @default(0) @db.Decimal(14, 3)
+  costLoss          Decimal         @default(0) @db.Decimal(12, 2)
+  remark            String?
+  createdBy         String?
+  createdAt         DateTime        @default(now())
+  productionOrder   ProductionOrder @relation(fields: [productionOrderId], references: [id])
+
+  @@index([tenantId, createdAt])
+}
+
+model SalesOrder {
+  id              String           @id @default(cuid())
+  tenantId        String
+  shopId          String?
+  orderNo         String
+  channel         ChannelType      @default(MANUAL)
+  customerName    String?
+  customerRegion  String?
+  orderedAt       DateTime         @default(now())
+  paidAt          DateTime?
+  status          OrderStatus      @default(PAID)
+  itemSaleAmount  Decimal          @default(0) @db.Decimal(12, 2)
+  discountAmount  Decimal          @default(0) @db.Decimal(12, 2)
+  receivedAmount  Decimal          @default(0) @db.Decimal(12, 2)
+  platformFee     Decimal          @default(0) @db.Decimal(12, 2)
+  paymentFee      Decimal          @default(0) @db.Decimal(12, 2)
+  adCost          Decimal          @default(0) @db.Decimal(12, 2)
+  shippingCost    Decimal          @default(0) @db.Decimal(12, 2)
+  packagingCost   Decimal          @default(0) @db.Decimal(12, 2)
+  productCost     Decimal          @default(0) @db.Decimal(12, 2)
+  afterSaleCost   Decimal          @default(0) @db.Decimal(12, 2)
+  grossProfit     Decimal          @default(0) @db.Decimal(12, 2)
+  netProfit       Decimal          @default(0) @db.Decimal(12, 2)
+  shipmentStatus  ShipmentStatus   @default(PENDING)
+  afterSaleStatus String?
+  remark          String?
+  createdBy       String?
+  updatedBy       String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  deletedAt       DateTime?
+  shop            Shop?            @relation(fields: [shopId], references: [id])
+  items           SalesOrderItem[]
+  shipments       Shipment[]
+  afterSales      AfterSale[]
+
+  @@unique([tenantId, orderNo])
+  @@index([tenantId, orderedAt])
+  @@index([tenantId, status])
+}
+
+model SalesOrderItem {
+  id           String      @id @default(cuid())
+  tenantId     String
+  salesOrderId String
+  skuId        String?
+  skuName      String
+  quantity     Int
+  unitPrice    Decimal     @db.Decimal(12, 2)
+  saleAmount   Decimal     @db.Decimal(12, 2)
+  productCost  Decimal     @default(0) @db.Decimal(12, 2)
+  salesOrder   SalesOrder  @relation(fields: [salesOrderId], references: [id])
+  sku          ProductSku? @relation(fields: [skuId], references: [id])
+
+  @@index([tenantId, salesOrderId])
+}
+
+model Shipment {
+  id            String         @id @default(cuid())
+  tenantId      String
+  salesOrderId  String
+  carrier       String?
+  trackingNo    String?
+  shippingCost  Decimal        @default(0) @db.Decimal(12, 2)
+  packagingCost Decimal        @default(0) @db.Decimal(12, 2)
+  shippedAt     DateTime?
+  status        ShipmentStatus @default(PENDING)
+  createdBy     String?
+  updatedBy     String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  deletedAt     DateTime?
+  salesOrder    SalesOrder     @relation(fields: [salesOrderId], references: [id])
+  items         ShipmentItem[]
+
+  @@index([tenantId, salesOrderId])
+}
+
+model ShipmentItem {
+  id         String            @id @default(cuid())
+  tenantId   String
+  shipmentId String
+  category   InventoryCategory
+  refId      String
+  quantity   Decimal           @db.Decimal(14, 3)
+  unitCost   Decimal           @default(0) @db.Decimal(12, 4)
+  totalCost  Decimal           @default(0) @db.Decimal(12, 2)
+  shipment   Shipment          @relation(fields: [shipmentId], references: [id])
+
+  @@index([tenantId, shipmentId])
+}
+
+model ShippingCost {
+  id           String   @id @default(cuid())
+  tenantId     String
+  salesOrderId String?
+  shipmentId   String?
+  carrier      String?
+  amount       Decimal  @db.Decimal(12, 2)
+  remark       String?
+  createdBy    String?
+  createdAt    DateTime @default(now())
+
+  @@index([tenantId, createdAt])
+}
+
+model AfterSale {
+  id                  String          @id @default(cuid())
+  tenantId            String
+  salesOrderId        String
+  type                AfterSaleType
+  reason              String?
+  refundAmount        Decimal         @default(0) @db.Decimal(12, 2)
+  resendProductCost   Decimal         @default(0) @db.Decimal(12, 2)
+  resendShippingCost  Decimal         @default(0) @db.Decimal(12, 2)
+  resendPackagingCost Decimal         @default(0) @db.Decimal(12, 2)
+  returnShippingCost  Decimal         @default(0) @db.Decimal(12, 2)
+  scrapCost           Decimal         @default(0) @db.Decimal(12, 2)
+  platformPenalty     Decimal         @default(0) @db.Decimal(12, 2)
+  laborCost           Decimal         @default(0) @db.Decimal(12, 2)
+  totalCost           Decimal         @default(0) @db.Decimal(12, 2)
+  handledAt           DateTime        @default(now())
+  remark              String?
+  createdBy           String?
+  updatedBy           String?
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+  deletedAt           DateTime?
+  salesOrder          SalesOrder      @relation(fields: [salesOrderId], references: [id])
+  items               AfterSaleItem[]
+
+  @@index([tenantId, salesOrderId])
+}
+
+model AfterSaleItem {
+  id          String    @id @default(cuid())
+  tenantId    String
+  afterSaleId String
+  skuId       String?
+  quantity    Int       @default(1)
+  cost        Decimal   @default(0) @db.Decimal(12, 2)
+  afterSale   AfterSale @relation(fields: [afterSaleId], references: [id])
+
+  @@index([tenantId, afterSaleId])
+}
+
+model Refund {
+  id           String   @id @default(cuid())
+  tenantId     String
+  afterSaleId  String?
+  salesOrderId String
+  amount       Decimal  @db.Decimal(12, 2)
+  refundedAt   DateTime @default(now())
+  createdBy    String?
+  createdAt    DateTime @default(now())
+
+  @@index([tenantId, refundedAt])
+}
+
+model Reshipment {
+  id            String    @id @default(cuid())
+  tenantId      String
+  afterSaleId   String?
+  carrier       String?
+  trackingNo    String?
+  productCost   Decimal   @default(0) @db.Decimal(12, 2)
+  shippingCost  Decimal   @default(0) @db.Decimal(12, 2)
+  packagingCost Decimal   @default(0) @db.Decimal(12, 2)
+  shippedAt     DateTime?
+  createdBy     String?
+  createdAt     DateTime  @default(now())
+
+  @@index([tenantId, createdAt])
+}
+
+model CostRecord {
+  id                String   @id @default(cuid())
+  tenantId          String
+  sourceType        String
+  sourceId          String
+  salesOrderId      String?
+  skuId             String?
+  productionOrderId String?
+  materialBatchId   String?
+  printerId         String?
+  amount            Decimal  @db.Decimal(12, 2)
+  remark            String?
+  createdBy         String?
+  createdAt         DateTime @default(now())
+
+  @@index([tenantId, sourceType, sourceId])
+}
+
+model ExpenseCategory {
+  id        String    @id @default(cuid())
+  tenantId  String
+  name      String
+  createdBy String?
+  updatedBy String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  @@unique([tenantId, name])
+}
+
+model Expense {
+  id         String    @id @default(cuid())
+  tenantId   String
+  categoryId String?
+  name       String
+  amount     Decimal   @db.Decimal(12, 2)
+  occurredAt DateTime  @default(now())
+  remark     String?
+  createdBy  String?
+  updatedBy  String?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  deletedAt  DateTime?
+
+  @@index([tenantId, occurredAt])
+}
+
+model ProfitSnapshot {
+  id          String   @id @default(cuid())
+  tenantId    String
+  periodType  String
+  periodStart DateTime
+  periodEnd   DateTime
+  salesAmount Decimal  @default(0) @db.Decimal(12, 2)
+  orderCount  Int      @default(0)
+  grossProfit Decimal  @default(0) @db.Decimal(12, 2)
+  netProfit   Decimal  @default(0) @db.Decimal(12, 2)
+  createdAt   DateTime @default(now())
+
+  @@index([tenantId, periodType, periodStart])
+}
+
+model DailyProfitReport {
+  id            String   @id @default(cuid())
+  tenantId      String
+  date          DateTime
+  salesAmount   Decimal  @default(0) @db.Decimal(12, 2)
+  orderCount    Int      @default(0)
+  productCost   Decimal  @default(0) @db.Decimal(12, 2)
+  shippingCost  Decimal  @default(0) @db.Decimal(12, 2)
+  packagingCost Decimal  @default(0) @db.Decimal(12, 2)
+  afterSaleCost Decimal  @default(0) @db.Decimal(12, 2)
+  adCost        Decimal  @default(0) @db.Decimal(12, 2)
+  grossProfit   Decimal  @default(0) @db.Decimal(12, 2)
+  netProfit     Decimal  @default(0) @db.Decimal(12, 2)
+  netProfitRate Decimal  @default(0) @db.Decimal(8, 4)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([tenantId, date])
+}
+
+model MonthlyProfitReport {
+  id            String   @id @default(cuid())
+  tenantId      String
+  month         DateTime
+  salesAmount   Decimal  @default(0) @db.Decimal(12, 2)
+  orderCount    Int      @default(0)
+  productCost   Decimal  @default(0) @db.Decimal(12, 2)
+  shippingCost  Decimal  @default(0) @db.Decimal(12, 2)
+  packagingCost Decimal  @default(0) @db.Decimal(12, 2)
+  afterSaleCost Decimal  @default(0) @db.Decimal(12, 2)
+  adCost        Decimal  @default(0) @db.Decimal(12, 2)
+  grossProfit   Decimal  @default(0) @db.Decimal(12, 2)
+  netProfit     Decimal  @default(0) @db.Decimal(12, 2)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([tenantId, month])
+}
