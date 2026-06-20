@@ -1,4 +1,4 @@
-services:
+﻿services:
   postgres:
     image: postgres:16-alpine
     restart: unless-stopped
@@ -18,6 +18,20 @@ services:
         max-size: "10m"
         max-file: "5"
 
+  migrate:
+    build:
+      context: .
+      target: builder
+    restart: "no"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-printerp}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-printerp}?schema=public
+    command: ["npx", "prisma", "migrate", "deploy"]
+    security_opt:
+      - no-new-privileges:true
+
   app:
     build: .
     restart: unless-stopped
@@ -35,7 +49,11 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-printerp}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-printerp}?schema=public
       AUTH_SECRET: ${AUTH_SECRET:?AUTH_SECRET is required}
       APP_URL: ${APP_URL:?APP_URL is required}
+      APP_TIMEZONE: ${APP_TIMEZONE:-Asia/Shanghai}
+      JOB_UPLOAD_DIR: ${JOB_UPLOAD_DIR:-/data/job-uploads}
       HOSTNAME: 0.0.0.0
+    volumes:
+      - job_uploads:${JOB_UPLOAD_DIR:-/data/job-uploads}
     ports:
       - "127.0.0.1:${APP_PORT:-3000}:3000"
     healthcheck:
@@ -49,19 +67,33 @@ services:
         max-size: "10m"
         max-file: "5"
 
-  migrate:
+  worker:
     build:
       context: .
       target: builder
-    restart: "no"
+    restart: unless-stopped
+    init: true
     depends_on:
       postgres:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-printerp}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-printerp}?schema=public
-    command: ["npx", "prisma", "migrate", "deploy"]
+      AUTH_SECRET: ${AUTH_SECRET:?AUTH_SECRET is required}
+      APP_URL: ${APP_URL:?APP_URL is required}
+      APP_TIMEZONE: ${APP_TIMEZONE:-Asia/Shanghai}
+      JOB_UPLOAD_DIR: ${JOB_UPLOAD_DIR:-/data/job-uploads}
+    volumes:
+      - job_uploads:${JOB_UPLOAD_DIR:-/data/job-uploads}
+    command: ["npm", "run", "jobs:work", "--", "--loop", "--interval=5000", "--limit=5"]
     security_opt:
       - no-new-privileges:true
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "5"
 
 volumes:
   postgres_data:
+  job_uploads:

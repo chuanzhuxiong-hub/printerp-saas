@@ -76,7 +76,8 @@
     "test:production-detail-ui": "tsx scripts/production-detail-ui-test.ts",
     "test:reports-dashboard-ui": "tsx scripts/reports-dashboard-ui-test.ts",
     "test:help-center-ui": "tsx scripts/help-center-ui-test.ts",
-    "test:navigation-purchase-ui": "tsx scripts/navigation-purchase-ui-test.ts"
+    "test:navigation-purchase-ui": "tsx scripts/navigation-purchase-ui-test.ts",
+    "prisma:deploy": "prisma migrate deploy"
   },
   "dependencies": {
     "@prisma/client": "^6.9.0",

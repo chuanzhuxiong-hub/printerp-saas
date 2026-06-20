@@ -1,7 +1,13 @@
-node_modules
+﻿node_modules
 .next
 .env
+.env.local
 .git
 npm-debug.log*
-README.md
-PrintERP_Product_Framework.md
+backups
+coverage
+*.log
+*.csv
+*订单*/
+5月订单/
+tsconfig.tsbuildinfo

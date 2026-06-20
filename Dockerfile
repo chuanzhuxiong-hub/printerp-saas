@@ -1,4 +1,4 @@
-FROM node:22-alpine AS deps
+﻿FROM node:22-alpine AS deps
 WORKDIR /app
 COPY package.json package-lock.json* ./
 RUN npm ci
@@ -13,7 +13,9 @@ RUN npm run build
 FROM node:22-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
-RUN addgroup -S printerp && adduser -S printerp -G printerp
+RUN addgroup -S printerp && adduser -S printerp -G printerp \
+  && mkdir -p /data/job-uploads \
+  && chown -R printerp:printerp /data/job-uploads
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/prisma ./prisma
