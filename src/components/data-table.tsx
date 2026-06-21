@@ -27,8 +27,11 @@ export function DataTable({
   }
 
   return (
-    <div className="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-      <div className="overflow-x-auto">
+    <div className="mt-4 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm sm:mt-6">
+      <div className="border-b border-slate-100 bg-slate-50/70 px-4 py-2 text-xs text-slate-500 sm:hidden">
+        表格可左右滑动查看完整字段
+      </div>
+      <div className="max-w-full overflow-x-auto overscroll-x-contain">
         <table className="w-full min-w-[760px] text-left text-sm">
           <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
             <tr>
