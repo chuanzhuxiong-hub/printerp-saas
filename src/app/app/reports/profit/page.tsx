@@ -178,7 +178,7 @@ export default async function ProfitReportPage() {
         <Link href="/app/help/reports" className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">查看教程</Link>
       </PageHeader>
 
-      <section className="grid gap-4 md:grid-cols-3">
+      <section className="grid gap-3 sm:gap-4 md:grid-cols-3">
         {cards.map((card) => (
           <MetricCard
             key={card.label}
@@ -190,14 +190,14 @@ export default async function ProfitReportPage() {
         ))}
       </section>
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <section className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-2 xl:grid-cols-4">
         <MetricCard title="本月经营净利润" value={money(cards[2].operating)} description={`订单净利 ${money(cards[2].net)} - 费用 ${money(expenseSum(monthExpense))} - 折旧 ${money(monthlyToolDepreciation)}`} tone={cards[2].operating.gte(0) ? "success" : "danger"} />
         <MetricCard title="本月订单毛利" value={money(orderSum(month, "grossProfit"))} description={`订单毛利率 ${percent(orderSum(month, "grossProfit") ?? new Prisma.Decimal(0), orderSum(month, "receivedAmount") ?? new Prisma.Decimal(0))}`} tone="brand" />
         <MetricCard title="售后损失" value={money(afterSaleTotal)} description="退款、补发、破损等损失" tone={afterSaleTotal.gt(0) ? "warning" : "success"} />
         <MetricCard title="耗材使用" value={`${materialGrams.toFixed(1)} g`} description={`本月消耗成本 ${money(materialCost)}`} />
       </section>
 
-      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
         <div className="mb-4 flex items-center justify-between gap-3">
           <div>
             <h2 className="text-lg font-semibold text-ink">利润趋势</h2>
@@ -244,7 +244,7 @@ export default async function ProfitReportPage() {
         <MetricCard title="数据完整度提醒" value="成本闭环" description="利润依赖生产、发货、售后、广告和费用完整录入" tone="warning" />
       </section>
 
-      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
         <div className="mb-4">
           <h2 className="text-lg font-semibold text-ink">专题报表入口</h2>
           <p className="mt-1 text-sm text-slate-500">从经营结果继续下钻到 SKU、店铺、售后、设备、耗材、竞品和选品。</p>
@@ -262,7 +262,7 @@ export default async function ProfitReportPage() {
         </div>
       </section>
 
-      <section className="rounded-2xl border border-blue-200 bg-blue-50 p-5 text-sm leading-6 text-blue-900">
+      <section className="rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm leading-6 text-blue-900 sm:p-5">
         <h2 className="font-semibold">利润口径说明</h2>
         <p className="mt-2">订单毛利 = 实收金额 - 产品生产成本 - 快递成本 - 包装成本 - 平台佣金 - 支付手续费。</p>
         <p>订单净利 = 订单毛利 - 售后成本 - 广告成本。经营净利润 = 订单净利 - 固定费用 - 工具设备折旧。</p>

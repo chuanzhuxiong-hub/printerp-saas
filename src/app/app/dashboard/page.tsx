@@ -146,7 +146,7 @@ export default async function DashboardPage() {
         </section>
       )}
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <section className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-2 xl:grid-cols-4">
         <MetricCard title="今日销售额" value={money(data.sales)} description="已付款/已成交订单实收" trend={<TrendIndicator value={salesTrend} label="较昨日" />} tone="brand" />
         <MetricCard title="今日净利润" value={money(data.netProfit)} description={`毛利 ${money(data.grossProfit)}`} tone={new Prisma.Decimal(data.netProfit).gte(0) ? "success" : "danger"} />
         <MetricCard title="今日订单数" value={data.orders} description={`今日发货 ${data.shippedCount} 单`} />
@@ -158,7 +158,7 @@ export default async function DashboardPage() {
       </section>
 
       <section className="grid gap-6 xl:grid-cols-[1.4fr_0.8fr]">
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
           <div className="flex items-center justify-between gap-3">
             <div>
               <h2 className="text-lg font-semibold text-ink">利润趋势</h2>
@@ -166,26 +166,26 @@ export default async function DashboardPage() {
             </div>
             <StatusBadge tone="info">近 7 天</StatusBadge>
           </div>
-          <div className="mt-5 space-y-4">
+          <div className="mt-4 space-y-3 sm:mt-5 sm:space-y-4">
             {days.map((day) => (
-              <div key={day.label} className="grid grid-cols-[48px_1fr_110px_90px] items-center gap-3 text-sm">
+              <div key={day.label} className="grid grid-cols-[44px_1fr] gap-x-3 gap-y-2 rounded-xl bg-slate-50 px-3 py-2 text-sm sm:grid-cols-[48px_1fr_110px_90px] sm:items-center sm:bg-transparent sm:px-0 sm:py-0">
                 <span className="text-slate-500">{day.label}</span>
                 <div className="h-3 overflow-hidden rounded-full bg-slate-100">
                   <div className="h-full rounded-full bg-brand" style={{ width: `${percentOf(day.sales, maxSales)}%` }} />
                 </div>
-                <span className="text-right tabular-nums text-slate-600">{money(day.sales)}</span>
-                <span className="text-right font-semibold tabular-nums text-ink">{money(day.net)}</span>
+                <span className="text-right text-xs tabular-nums text-slate-600 sm:text-sm">销售 {money(day.sales)}</span>
+                <span className="text-right text-xs font-semibold tabular-nums text-ink sm:text-sm">净利 {money(day.net)}</span>
               </div>
             ))}
           </div>
         </div>
 
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
           <h2 className="text-lg font-semibold text-ink">经营待办</h2>
           <p className="mt-1 text-sm text-slate-500">优先处理影响利润、履约和库存安全的事项。</p>
           <div className="mt-5 space-y-3">
             {todoItems.map((item) => (
-              <Link key={item.label} href={item.href} className="flex items-center justify-between rounded-xl border border-slate-200 px-4 py-3 transition hover:border-blue-200 hover:bg-blue-50/50">
+              <Link key={item.label} href={item.href} className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 px-4 py-3 transition hover:border-blue-200 hover:bg-blue-50/50">
                 <div>
                   <p className="font-semibold text-ink">{item.label}</p>
                   <p className="mt-1 text-xs text-slate-500">点击进入处理页面</p>
@@ -198,7 +198,7 @@ export default async function DashboardPage() {
       </section>
 
       <section className="grid gap-6 xl:grid-cols-2">
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
           <h2 className="text-lg font-semibold text-ink">SKU 利润排行</h2>
           <p className="mt-1 text-sm text-slate-500">按近 7 天订单净利润分摊估算。</p>
           <div className="mt-4 space-y-3">
@@ -212,7 +212,7 @@ export default async function DashboardPage() {
           </div>
         </div>
 
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
           <h2 className="text-lg font-semibold text-ink">店铺利润排行</h2>
           <p className="mt-1 text-sm text-slate-500">对比不同店铺近期净利润贡献。</p>
           <div className="mt-4 space-y-3">

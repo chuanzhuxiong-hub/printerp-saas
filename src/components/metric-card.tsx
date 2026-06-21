@@ -25,18 +25,18 @@ export function MetricCard({
   }[tone];
 
   return (
-    <section className={cn("rounded-2xl border bg-white p-5 shadow-sm", toneClass)}>
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-sm font-medium text-slate-500">{title}</p>
-          <div className="mt-2 text-2xl font-semibold tracking-tight text-ink">{value}</div>
+    <section className={cn("rounded-2xl border bg-white p-4 shadow-sm sm:p-5", toneClass)}>
+      <div className="flex min-w-0 items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="truncate text-xs font-medium text-slate-500 sm:text-sm">{title}</p>
+          <div className="mt-2 break-words text-xl font-semibold tracking-tight text-ink sm:text-2xl">{value}</div>
         </div>
         {icon && <div className="rounded-xl bg-white/80 p-2 text-slate-500 shadow-sm">{icon}</div>}
       </div>
       {(description || trend) && (
-        <div className="mt-4 flex items-center justify-between gap-3 text-sm">
-          {description && <p className="text-slate-500">{description}</p>}
-          {trend}
+        <div className="mt-3 flex flex-col gap-2 text-sm sm:mt-4 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+          {description && <p className="min-w-0 break-words text-xs leading-5 text-slate-500 sm:text-sm">{description}</p>}
+          {trend && <div className="shrink-0">{trend}</div>}
         </div>
       )}
     </section>

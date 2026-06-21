@@ -11,7 +11,7 @@ export function TrendIndicator({
 
   return (
     <span className={cn("inline-flex items-center gap-1 text-xs font-semibold", positive ? "text-emerald-600" : "text-rose-600")}>
-      <span>{positive ? "↑" : "↓"}</span>
+      <span aria-hidden>{positive ? "↗" : "↘"}</span>
       <span>{Math.abs(value).toFixed(1)}%</span>
       {label && <span className="font-medium text-slate-500">{label}</span>}
     </span>
