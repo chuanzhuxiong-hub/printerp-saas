@@ -190,7 +190,7 @@ export default async function ProductsPage({
                 const productModels = product.models.filter((model) => !model.skuId);
                 return (
                   <details key={product.id} className="group" open>
-                    <summary className="grid cursor-pointer list-none grid-cols-[1.5fr_120px_110px_120px_130px_150px] items-center gap-4 px-5 py-4 transition hover:bg-slate-50">
+                    <summary className="flex cursor-pointer list-none flex-col gap-3 px-4 py-4 transition hover:bg-slate-50 sm:px-5 lg:grid lg:grid-cols-[1.5fr_120px_110px_120px_130px_150px] lg:items-center lg:gap-4">
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
                           <span className="rounded-lg bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-500 group-open:bg-brand group-open:text-white">展开</span>
@@ -198,11 +198,11 @@ export default async function ProductsPage({
                         </div>
                         <p className="mt-1 text-sm text-slate-500">{product.category ?? "未分类"} · 默认模型 {productModels.length ? `${productModels.length} 个` : "未绑定"}</p>
                       </div>
-                      <span className="font-semibold text-ink">{product.skus.length}</span>
-                      <span>{activeCompetitorCount}/5</span>
-                      <span className="tabular-nums">{score}%</span>
+                      <span className="text-sm font-semibold text-ink lg:text-base"><span className="text-slate-400 lg:hidden">SKU：</span>{product.skus.length}</span>
+                      <span className="text-sm text-slate-600 lg:text-base"><span className="text-slate-400 lg:hidden">竞品：</span>{activeCompetitorCount}/5</span>
+                      <span className="text-sm tabular-nums text-slate-600 lg:text-base"><span className="text-slate-400 lg:hidden">完成度：</span>{score}%</span>
                       <StatusBadge tone={statusTone(product.isActive)}>{product.isActive ? "启用" : "停用"}</StatusBadge>
-                      <div className="flex justify-end gap-3 text-sm">
+                      <div className="flex gap-3 text-sm lg:justify-end">
                         <Link className="font-semibold text-brand" href={`/app/products/${product.id}`}>详情</Link>
                         <Link className="font-semibold text-brand" href={`/app/products/${product.id}?tab=content`}>AI</Link>
                       </div>
@@ -216,6 +216,7 @@ export default async function ProductsPage({
                           </div>
                           <Link href={`/app/skus/new?productId=${product.id}&returnTo=/app/products`} className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">添加 SKU</Link>
                         </div>
+                        <div className="mb-2 text-xs text-slate-500 sm:hidden">SKU 明细可左右滑动查看完整字段</div>
                         <div className="overflow-x-auto">
                           <table className="w-full min-w-[920px] text-sm">
                             <thead className="text-left text-xs uppercase tracking-wide text-slate-500">
