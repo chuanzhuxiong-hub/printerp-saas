@@ -54,7 +54,7 @@ export function DataTable({
               {row.slice(1).map((cell, cellOffset) => {
                 const cellIndex = cellOffset + 1;
                 return (
-                  <div key={`${headers[cellIndex] ?? cellIndex}-${cellOffset}`} className="grid grid-cols-[6rem_minmax(0,1fr)] gap-3 text-sm">
+                  <div key={`${headers[cellIndex] ?? cellIndex}-${cellOffset}`} className="grid grid-cols-[5.5rem_minmax(0,1fr)] gap-3 text-sm">
                     <dt className="text-slate-400">{headers[cellIndex] ?? `字段 ${cellIndex + 1}`}</dt>
                     <dd className={cn("min-w-0 break-words text-slate-700", alignRightColumns.includes(cellIndex) && "text-right tabular-nums")}>{cell}</dd>
                   </div>
@@ -71,9 +71,7 @@ export function DataTable({
             <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
               <tr>
                 {headers.map((header, index) => (
-                  <th key={header} className={cn("px-5 py-3 font-semibold", alignRightColumns.includes(index) && "text-right")}>
-                    {header}
-                  </th>
+                  <th key={header} className={cn("px-5 py-3 font-semibold", alignRightColumns.includes(index) && "text-right")}>{header}</th>
                 ))}
               </tr>
             </thead>
@@ -81,9 +79,7 @@ export function DataTable({
               {rows.map((row, rowIndex) => (
                 <tr key={rowIndex} className="transition hover:bg-slate-50/80">
                   {row.map((cell, cellIndex) => (
-                    <td key={cellIndex} className={cn("px-5 py-4 align-middle text-slate-700", alignRightColumns.includes(cellIndex) && "text-right tabular-nums")}>
-                      {cell}
-                    </td>
+                    <td key={cellIndex} className={cn("px-5 py-4 align-middle text-slate-700", alignRightColumns.includes(cellIndex) && "text-right tabular-nums")}>{cell}</td>
                   ))}
                 </tr>
               ))}

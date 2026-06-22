@@ -1,4 +1,4 @@
-﻿import { Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import Link from "next/link";
 import { DataTable } from "@/components/data-table";
 import { FilterBar } from "@/components/filter-bar";
@@ -122,7 +122,7 @@ export default async function ProductsPage({
   const pageHref = (page: number) => `/app/products?tab=${active}&keyword=${encodeURIComponent(keyword ?? "")}&status=${productStatus}&page=${page}&pageSize=${pagination.pageSize}`;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <PageHeader
         eyebrow="Product Operations"
         title="产品中心"
@@ -134,7 +134,7 @@ export default async function ProductsPage({
       {query.saved && <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{query.message ?? "产品中心操作已保存。"}</p>}
       {query.error && <p className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{query.error}</p>}
 
-      <div className="grid gap-3 md:grid-cols-4">
+      <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-4">
         {tabs.map((tab) => (
           <Link
             key={tab.key}
@@ -147,35 +147,35 @@ export default async function ProductsPage({
         ))}
       </div>
 
-      <section className="grid gap-4 rounded-2xl border border-amber-100 bg-amber-50/70 p-5 md:grid-cols-[1fr_auto] md:items-center">
+      <section className="grid gap-4 rounded-2xl border border-amber-100 bg-amber-50/70 p-4 sm:p-5 md:grid-cols-[1fr_auto] md:items-center">
         <div>
           <h2 className="font-semibold text-ink">风险提示</h2>
           <p className="mt-1 text-sm text-slate-600">当前筛选结果中有 {productRiskCount} 个 SKU 存在未配置 BOM、低利润或低库存风险。低利润会影响订单净利，低库存会影响生产和发货。</p>
         </div>
         <div className="flex flex-wrap gap-2 md:justify-end">
           <StatusBadge tone={productRiskCount ? "warning" : "success"}>{productRiskCount ? "需要处理" : "风险正常"}</StatusBadge>
-          <Link href="/app/products?tab=library" className="rounded-lg bg-white px-3 py-2 text-sm font-semibold text-brand shadow-sm hover:bg-blue-50">操作面板</Link>
+          <Link href="/app/products?tab=library" className="inline-flex min-h-10 w-full items-center justify-center rounded-lg bg-white px-3 py-2 text-sm font-semibold text-brand shadow-sm hover:bg-blue-50 sm:w-auto">操作面板</Link>
         </div>
       </section>
 
       {active === "library" && (
         <section className="space-y-5">
-          <FilterBar action={<Link href="/app/products/new" className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700">新增产品</Link>}>
+          <FilterBar action={<Link href="/app/products/new" className="inline-flex min-h-10 w-full items-center justify-center rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 sm:w-auto">新增产品</Link>}>
             <form action="/app/products" method="get" className="flex w-full flex-wrap items-center gap-3">
               <input type="hidden" name="tab" value="library" />
-              <input name="keyword" defaultValue={keyword} placeholder="搜索产品、分类、SKU 编码" className="min-w-[260px] flex-1 rounded-lg border px-3 py-2 text-sm" />
-              <select name="status" defaultValue={productStatus} className="rounded-lg border px-3 py-2 text-sm">
+              <input name="keyword" defaultValue={keyword} placeholder="搜索产品、分类、SKU 编码" className="w-full rounded-lg border px-3 py-2 text-sm sm:min-w-[260px] sm:flex-1" />
+              <select name="status" defaultValue={productStatus} className="w-full rounded-lg border px-3 py-2 text-sm sm:w-auto">
                 <option value="ALL">全部状态</option>
                 <option value="ACTIVE">只看启用</option>
                 <option value="INACTIVE">只看停用</option>
               </select>
-              <button className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white">筛选</button>
-              <Link href="/app/products" className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">重置</Link>
+              <button className="w-full rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white sm:w-auto">筛选</button>
+              <Link href="/app/products" className="inline-flex w-full items-center justify-center rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 sm:w-auto">重置</Link>
             </form>
           </FilterBar>
 
           <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-            <div className="grid grid-cols-[1.5fr_120px_110px_120px_130px_150px] gap-4 border-b border-slate-200 bg-slate-50 px-5 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
+            <div className="hidden grid-cols-[1.5fr_120px_110px_120px_130px_150px] gap-4 border-b border-slate-200 bg-slate-50 px-5 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500 lg:grid">
               <span>产品 / SKU 展开</span>
               <span>SKU</span>
               <span>竞品</span>
@@ -207,14 +207,14 @@ export default async function ProductsPage({
                         <Link className="font-semibold text-brand" href={`/app/products/${product.id}?tab=content`}>AI</Link>
                       </div>
                     </summary>
-                    <div className="bg-slate-50/70 px-5 pb-5">
-                      <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                    <div className="bg-slate-50/70 px-3 pb-4 sm:px-5 sm:pb-5">
+                      <div className="rounded-2xl border border-slate-200 bg-white p-3 sm:p-4">
                         <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
                           <div>
                             <h3 className="font-semibold text-ink">SKU 展开管理</h3>
                             <p className="mt-1 text-sm text-slate-500">SKU 是真实销售、库存、生产和利润核算对象，BOM / 打印配方、默认模型和库存警戒线都在这里检查。</p>
                           </div>
-                          <Link href={`/app/skus/new?productId=${product.id}&returnTo=/app/products`} className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">添加 SKU</Link>
+                          <Link href={`/app/skus/new?productId=${product.id}&returnTo=/app/products`} className="inline-flex min-h-10 w-full items-center justify-center rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 sm:w-auto">添加 SKU</Link>
                         </div>
                         <div className="mb-2 text-xs text-slate-500 sm:hidden">SKU 明细可左右滑动查看完整字段</div>
                         <div className="overflow-x-auto">
@@ -281,11 +281,11 @@ export default async function ProductsPage({
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-500 shadow-sm">
+          <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-500 shadow-sm sm:flex-row sm:items-center sm:justify-between">
             <span>第 {pagination.page} / {totalPages} 页，每页 {pagination.pageSize} 个产品，本页 {products.length} 个</span>
-            <div className="flex gap-2">
-              <Link href={pageHref(Math.max(pagination.page - 1, 1))} className={`rounded-lg border px-3 py-2 font-semibold ${pagination.page <= 1 ? "pointer-events-none opacity-50" : "bg-white text-brand"}`}>上一页</Link>
-              <Link href={pageHref(Math.min(pagination.page + 1, totalPages))} className={`rounded-lg border px-3 py-2 font-semibold ${pagination.page >= totalPages ? "pointer-events-none opacity-50" : "bg-white text-brand"}`}>下一页</Link>
+            <div className="grid w-full grid-cols-2 gap-2 sm:w-auto">
+              <Link href={pageHref(Math.max(pagination.page - 1, 1))} className={`inline-flex justify-center rounded-lg border px-3 py-2 font-semibold ${pagination.page <= 1 ? "pointer-events-none opacity-50" : "bg-white text-brand"}`}>上一页</Link>
+              <Link href={pageHref(Math.min(pagination.page + 1, totalPages))} className={`inline-flex justify-center rounded-lg border px-3 py-2 font-semibold ${pagination.page >= totalPages ? "pointer-events-none opacity-50" : "bg-white text-brand"}`}>下一页</Link>
             </div>
           </div>
         </section>
@@ -358,16 +358,16 @@ export default async function ProductsPage({
           <FilterBar>
             <form action="/app/products" method="get" className="flex w-full flex-wrap items-center gap-3">
               <input type="hidden" name="tab" value="opportunities" />
-              <input name="keyword" defaultValue={keyword} placeholder="搜索关键词、标题或类目" className="min-w-[260px] flex-1 rounded-lg border px-3 py-2 text-sm" />
-              <select name="status" defaultValue={query.status ?? "ALL"} className="rounded-lg border px-3 py-2 text-sm">
+              <input name="keyword" defaultValue={keyword} placeholder="搜索关键词、标题或类目" className="w-full rounded-lg border px-3 py-2 text-sm sm:min-w-[260px] sm:flex-1" />
+              <select name="status" defaultValue={query.status ?? "ALL"} className="w-full rounded-lg border px-3 py-2 text-sm sm:w-auto">
                 <option value="ALL">全部状态</option>
                 <option value="PENDING">待评估</option>
                 <option value="SHORTLISTED">已入围</option>
                 <option value="REJECTED">已淘汰</option>
                 <option value="CONVERTED">已转产品</option>
               </select>
-              <input name="minScore" type="number" defaultValue={query.minScore ?? "0"} placeholder="最低评分" className="w-28 rounded-lg border px-3 py-2 text-sm" />
-              <button className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white">筛选</button>
+              <input name="minScore" type="number" defaultValue={query.minScore ?? "0"} placeholder="最低评分" className="w-full rounded-lg border px-3 py-2 text-sm sm:w-28" />
+              <button className="w-full rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white sm:w-auto">筛选</button>
             </form>
           </FilterBar>
           <div className="rounded-2xl border border-emerald-100 bg-emerald-50/70 p-5 text-sm leading-6 text-slate-700">

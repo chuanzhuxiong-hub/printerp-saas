@@ -1,4 +1,4 @@
-﻿import { InventoryCategory, Prisma } from "@prisma/client";
+import { InventoryCategory, Prisma } from "@prisma/client";
 import Link from "next/link";
 import { DataTable } from "@/components/data-table";
 import { FilterBar } from "@/components/filter-bar";
@@ -91,7 +91,7 @@ export default async function InventoryPage({
   const tabHref = (nextTab: InventoryTab) => `/app/inventory?tab=${nextTab}${keyword ? `&keyword=${encodeURIComponent(keyword)}` : ""}`;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <PageHeader
         eyebrow="Inventory Operations"
         title="库存中心"
@@ -103,14 +103,14 @@ export default async function InventoryPage({
         <Link href="/app/inventory/replenishment" className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">补货建议</Link>
       </PageHeader>
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <section className="grid gap-3 sm:gap-4 md:grid-cols-2 xl:grid-cols-4">
         <MetricCard title="库存项目" value={allItems.length} description="耗材、成品、包装和配件" tone="brand" />
         <MetricCard title="库存预警" value={lowStockItems.length} description="低于或等于警戒线" tone={lowStockItems.length ? "danger" : "success"} />
         <MetricCard title="库存估值" value={`¥${totalValue.toFixed(2)}`} description="按当前数量 × 单位成本估算" />
         <MetricCard title="库存流水" value={transactions.length} description="最近 200 条库存变更" />
       </section>
 
-      <div className="grid gap-3 md:grid-cols-3 xl:grid-cols-6">
+      <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6">
         {tabs.map((item) => (
           <Link key={item.key} href={tabHref(item.key)} className={`rounded-2xl border p-4 shadow-sm transition ${tab === item.key ? "border-blue-200 bg-blue-50 text-brand" : "border-slate-200 bg-white text-slate-600 hover:border-blue-200 hover:bg-blue-50/50"}`}>
             <div className="flex items-center justify-between gap-3">
@@ -128,9 +128,9 @@ export default async function InventoryPage({
       <FilterBar>
         <form action="/app/inventory" method="get" className="flex w-full flex-wrap items-center gap-3">
           <input type="hidden" name="tab" value={tab} />
-          <input name="keyword" defaultValue={keyword} placeholder="搜索库存名称" className="min-w-[260px] flex-1 rounded-lg border px-3 py-2 text-sm" />
-          <button className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white">筛选</button>
-          <Link href="/app/inventory" className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">重置</Link>
+          <input name="keyword" defaultValue={keyword} placeholder="搜索库存名称" className="w-full rounded-lg border px-3 py-2 text-sm sm:min-w-[260px] sm:flex-1" />
+          <button className="w-full rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white sm:w-auto">筛选</button>
+          <Link href="/app/inventory" className="inline-flex w-full items-center justify-center rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 sm:w-auto">重置</Link>
         </form>
       </FilterBar>
 

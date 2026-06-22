@@ -1,4 +1,4 @@
-﻿import { OrderStatus, Prisma } from "@prisma/client";
+import { OrderStatus, Prisma } from "@prisma/client";
 import Link from "next/link";
 import { DataTable } from "@/components/data-table";
 import { FilterBar } from "@/components/filter-bar";
@@ -130,7 +130,7 @@ export default async function OrdersPage({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <PageHeader
         eyebrow="电商订单后台"
         title="订单中心"
@@ -148,14 +148,14 @@ export default async function OrdersPage({
         </p>
       )}
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <section className="grid gap-3 sm:gap-4 md:grid-cols-2 xl:grid-cols-4">
         <MetricCard title="筛选订单数" value={sum._count} description="当前条件下的订单数量" tone="brand" />
         <MetricCard title="实收金额" value={money(sum._sum.receivedAmount)} description="订单实际收款合计" />
         <MetricCard title="净利润" value={money(sum._sum.netProfit)} description={`毛利 ${money(sum._sum.grossProfit)}`} tone={(sum._sum.netProfit ?? new Prisma.Decimal(0)).gte(0) ? "success" : "danger"} />
         <MetricCard title="售后成本" value={money(sum._sum.afterSaleCost)} description="退款、补发、破损等损失" tone={(sum._sum.afterSaleCost ?? new Prisma.Decimal(0)).gt(0) ? "warning" : "success"} />
       </section>
 
-      <div className="grid gap-3 md:grid-cols-3 xl:grid-cols-6">
+      <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6">
         {tabs.map((item) => (
           <Link key={item.key} href={makeHref({ tab: item.key, page: 1 })} className={`rounded-2xl border p-4 shadow-sm transition ${tab === item.key ? "border-blue-200 bg-blue-50 text-brand" : "border-slate-200 bg-white text-slate-600 hover:border-blue-200 hover:bg-blue-50/50"}`}>
             <div className="flex items-center justify-between gap-3">
@@ -171,13 +171,13 @@ export default async function OrdersPage({
       <FilterBar>
         <form action="/app/orders" method="get" className="flex w-full flex-wrap items-center gap-3">
           <input type="hidden" name="tab" value={tab} />
-          <input name="keyword" defaultValue={keyword} placeholder="搜索订单号、客户、店铺、SKU" className="min-w-[280px] flex-1 rounded-lg border px-3 py-2 text-sm" />
-          <select name="shopId" defaultValue={query.shopId ?? "ALL"} className="rounded-lg border px-3 py-2 text-sm">
+          <input name="keyword" defaultValue={keyword} placeholder="搜索订单号、客户、店铺、SKU" className="w-full rounded-lg border px-3 py-2 text-sm sm:min-w-[280px] sm:flex-1" />
+          <select name="shopId" defaultValue={query.shopId ?? "ALL"} className="w-full rounded-lg border px-3 py-2 text-sm sm:w-auto">
             <option value="ALL">全部店铺</option>
             {shops.map((shop) => <option key={shop.id} value={shop.id}>{shop.name}</option>)}
           </select>
-          <button className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white">筛选</button>
-          <Link href="/app/orders" className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">重置</Link>
+          <button className="w-full rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white sm:w-auto">筛选</button>
+          <Link href="/app/orders" className="inline-flex w-full items-center justify-center rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 sm:w-auto">重置</Link>
         </form>
       </FilterBar>
 
@@ -201,7 +201,7 @@ export default async function OrdersPage({
             <StatusBadge key={`${order.id}-production`} tone={productionState.tone}>{productionState.label}</StatusBadge>,
             <StatusBadge key={`${order.id}-shipping`} tone={shippingState.tone}>{shippingState.label}</StatusBadge>,
             <StatusBadge key={`${order.id}-after-sale`} tone={afterSaleState.tone}>{afterSaleState.label}</StatusBadge>,
-            <div key={`${order.id}-actions`} className="flex justify-end gap-3"><Link href={`/app/orders/${order.id}`} className="font-semibold text-brand">详情</Link><Link href={`/app/production/new?orderId=${order.id}&skuId=${order.items.find((item) => item.skuId)?.skuId ?? ""}`} className="font-semibold text-brand">生产</Link></div>
+            <div key={`${order.id}-actions`} className="flex flex-wrap justify-end gap-3"><Link href={`/app/orders/${order.id}`} className="font-semibold text-brand">详情</Link><Link href={`/app/production/new?orderId=${order.id}&skuId=${order.items.find((item) => item.skuId)?.skuId ?? ""}`} className="font-semibold text-brand">生产</Link></div>
           ];
         })}
         emptyText="暂无订单"
@@ -211,11 +211,11 @@ export default async function OrdersPage({
         alignRightColumns={[3, 4, 8]}
       />
 
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-500 shadow-sm">
+      <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-500 shadow-sm sm:flex-row sm:items-center sm:justify-between">
         <span>第 {pagination.page} / {totalPages} 页，每页 {pagination.pageSize} 条，本页 {orders.length} 条</span>
-        <div className="flex gap-2">
-          <Link href={makeHref({ page: Math.max(pagination.page - 1, 1) })} className={`rounded-lg border px-3 py-2 font-semibold ${pagination.page <= 1 ? "pointer-events-none opacity-50" : "bg-white text-brand"}`}>上一页</Link>
-          <Link href={makeHref({ page: Math.min(pagination.page + 1, totalPages) })} className={`rounded-lg border px-3 py-2 font-semibold ${pagination.page >= totalPages ? "pointer-events-none opacity-50" : "bg-white text-brand"}`}>下一页</Link>
+        <div className="grid w-full grid-cols-2 gap-2 sm:w-auto">
+          <Link href={makeHref({ page: Math.max(pagination.page - 1, 1) })} className={`inline-flex justify-center rounded-lg border px-3 py-2 font-semibold ${pagination.page <= 1 ? "pointer-events-none opacity-50" : "bg-white text-brand"}`}>上一页</Link>
+          <Link href={makeHref({ page: Math.min(pagination.page + 1, totalPages) })} className={`inline-flex justify-center rounded-lg border px-3 py-2 font-semibold ${pagination.page >= totalPages ? "pointer-events-none opacity-50" : "bg-white text-brand"}`}>下一页</Link>
         </div>
       </div>
     </div>

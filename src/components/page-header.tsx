@@ -24,12 +24,12 @@ export function PageHeader({
           <h1 className="break-words text-xl font-semibold tracking-tight text-ink sm:text-2xl">{title}</h1>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-500">{description}</p>
         </div>
-        <div className="flex shrink-0 flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+        <div className="flex w-full shrink-0 flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center [&>a]:inline-flex [&>a]:min-h-10 [&>a]:items-center [&>a]:justify-center [&>a]:text-center">
           {children}
           {actionHref && (
             <Link
               href={actionHref}
-              className="inline-flex min-h-10 items-center justify-center rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
+              className="inline-flex min-h-10 w-full items-center justify-center rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 sm:w-auto"
             >
               {actionLabel}
             </Link>
